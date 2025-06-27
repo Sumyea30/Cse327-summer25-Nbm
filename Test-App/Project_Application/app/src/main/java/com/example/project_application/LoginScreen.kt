@@ -1,6 +1,7 @@
 package com.example.project_application
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.LocationManager
@@ -17,16 +18,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider
 import java.util.*
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
     var isSignUp by remember { mutableStateOf(false) }
 
@@ -36,23 +36,37 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     var dob by remember { mutableStateOf("") }
     var country by remember { mutableStateOf("") }
 
-    // 🔐 Location permission for country auto-detect
+
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            val locationManager = context.getSystemService(LocationManager::class.java)
-            val location = locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            if (location != null) {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                country = address?.firstOrNull()?.countryName ?: "Unknown"
+            val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                try {
+                    val location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                    if (location != null) {
+                        val geocoder = Geocoder(context, Locale.getDefault())
+                        val address = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        country = address?.firstOrNull()?.countryName ?: "Unknown"
+                    } else {
+                        country = "Unavailable"
+                    }
+                } catch (e: SecurityException) {
+                    country = "Permission error"
+                }
             }
         } else {
             Toast.makeText(context, "Location permission denied", Toast.LENGTH_SHORT).show()
         }
     }
 
+    // 🔄 Request location once on load
     LaunchedEffect(Unit) {
         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
@@ -120,14 +134,31 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             onClick = {
                 if (isSignUp) {
                     auth.createUserWithEmailAndPassword(email, password)
-                        .addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                Toast.makeText(context, "Sign up successful", Toast.LENGTH_SHORT).show()
-                                onLoginSuccess()
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                val userId = auth.currentUser?.uid
+                                val userMap = hashMapOf(
+                                    "name" to name,
+                                    "dob" to dob,
+                                    "email" to email,
+                                    "country" to country
+                                )
+
+                                if (userId != null) {
+                                    db.collection("users").document(userId).set(userMap)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Sign up & profile saved!", Toast.LENGTH_SHORT).show()
+                                            onLoginSuccess()
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Firestore save failed", Toast.LENGTH_SHORT).show()
+                                        }
+                                }
                             } else {
                                 Toast.makeText(context, "Sign up failed", Toast.LENGTH_SHORT).show()
                             }
                         }
+
                 } else {
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener {
