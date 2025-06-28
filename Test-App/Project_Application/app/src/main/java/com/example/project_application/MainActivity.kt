@@ -1,28 +1,46 @@
 package com.example.project_application
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import com.google.firebase.FirebaseApp
+import androidx.compose.runtime.*
 import com.example.project_application.ui.theme.Project_ApplicationTheme
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //Initialize Firebase
+        // Initialize Firebase once
         FirebaseApp.initializeApp(this)
 
         setContent {
             Project_ApplicationTheme {
-                LoginScreen(
-                    onLoginSuccess = {
-                        Toast.makeText(this, "Login Success!", Toast.LENGTH_SHORT).show()
-                        // TODO: Go to HomeScreen later
-                    }
-                )
+                var currentScreen by remember { mutableStateOf("login") }
+
+                when (currentScreen) {
+                    "login" -> LoginScreen(
+                        onLoginSuccess = {
+                            Toast.makeText(this, "Login Success!", Toast.LENGTH_SHORT).show()
+                            currentScreen = "permissions"
+                        }
+                    )
+
+                    "permissions" -> PermissionScreen(
+                        onPermissionsGranted = {
+                            currentScreen = "onboarding"
+                        }
+                    )
+
+                    "onboarding" -> OnboardingScreen(
+                        onFinish = {
+                            currentScreen = "home"
+                        }
+                    )
+
+                   // "home" -> HomeScreen()
+                }
             }
         }
     }
