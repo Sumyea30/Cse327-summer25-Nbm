@@ -76,7 +76,10 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.0.0")
 
     // MediaPipe LLM (Text and Image)
+    //implementation("com.google.mediapipe:framework:0.10.1")
     implementation("com.google.mediapipe:tasks-genai:0.10.25")
+    //implementation("com.google.mediapipe:tasks-core:0.10.24")
+    implementation("com.google.mediapipe:tasks-vision-image-generator:0.10.21")
 
     // Protobuf runtime
     implementation("com.google.protobuf:protobuf-javalite:4.26.1")
@@ -89,4 +92,5 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
 }

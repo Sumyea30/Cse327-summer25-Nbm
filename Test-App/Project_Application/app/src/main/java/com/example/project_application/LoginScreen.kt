@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +22,10 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 import com.google.firebase.firestore.FirebaseFirestore
+
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.Alignment
+
 
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
@@ -77,6 +82,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.logo2),
+            contentDescription = "App Logo",
+            modifier = Modifier
+                .size(120.dp)
+                .align(Alignment.CenterHorizontally)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = if (isSignUp) "Create Account" else "Welcome Back",
             style = MaterialTheme.typography.headlineSmall

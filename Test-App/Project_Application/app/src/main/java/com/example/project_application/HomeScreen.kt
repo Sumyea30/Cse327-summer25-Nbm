@@ -74,7 +74,7 @@ fun HomeScreen() {
             Scaffold(
                 topBar = {
                     TopAppBar(
-                        title = { Text("Freely 🤖") },
+                        title = { Text("Freely") },
                         navigationIcon = {
                             IconButton(onClick = {
                                 scope.launch { drawerState.open() }
@@ -109,23 +109,30 @@ fun HomeScreen() {
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        items(chatHistory) { message ->
-                            Text(
-                                text = message,
-                                modifier = Modifier.padding(vertical = 4.dp),
-                                fontSize = 16.sp
-                            )
+                    Box(modifier = Modifier.weight(1f)) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                        ) {
+                            items(chatHistory) { message ->
+                                Text(
+                                    text = message,
+                                    modifier = Modifier.padding(vertical = 6.dp),
+                                    fontSize = 16.sp
+                                )
+                            }
                         }
                     }
 
                     selectedUri?.let {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text("📎 Selected file: ${it.lastPathSegment}", fontSize = 12.sp)
+                        Text(
+                            text = "📎 Selected file: ${it.lastPathSegment}",
+                            fontSize = 12.sp,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
                     }
                 }
 
@@ -196,7 +203,7 @@ fun HomeScreen() {
                                 showModelDialog = false
 
                                 var lastIndex = -1
-                                LlmManager.runM2Inference(inputText, bitmap) { partial, done ->
+                                LlmManager.runM2Inference(context, inputText, bitmap) { partial, done ->
                                     if (lastIndex == -1) {
                                         chatHistory.add("Freely (M2): $partial")
                                         lastIndex = chatHistory.lastIndex

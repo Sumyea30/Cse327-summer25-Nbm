@@ -48,6 +48,13 @@ fun DownloadScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Text(
+            text = "ADB Installed LLMs,Please Skip",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(8.dp),
+            color = Color.Red,
+            fontWeight = FontWeight.Bold
+        )
         Image(
             painter = painterResource(id = R.drawable.download_help),
             contentDescription = "Download Instruction",

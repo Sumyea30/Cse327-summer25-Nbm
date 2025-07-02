@@ -54,7 +54,7 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .padding(24.dp),
-        color = MaterialTheme.colorScheme.background
+        //color = MaterialTheme.colorScheme.background
     ) {
         Column(
             verticalArrangement = Arrangement.Center,
