@@ -8,6 +8,7 @@ import android.graphics.ImageDecoder
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -117,12 +118,9 @@ fun HomeScreen() {
                                 .padding(16.dp)
                         ) {
                             items(chatHistory) { message ->
-                                Text(
-                                    text = message,
-                                    modifier = Modifier.padding(vertical = 6.dp),
-                                    fontSize = 16.sp
-                                )
+                                MessageBubble(message)
                             }
+
                         }
                     }
 
@@ -269,5 +267,41 @@ fun uriToBitmap(context: android.content.Context, uri: Uri): Bitmap? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+//
+@Composable
+fun MessageBubble(message: String) {
+    val isUser = message.startsWith("You:")
+    val isBot = message.startsWith("Freely")
+
+    val backgroundColor = when {
+        isUser -> MaterialTheme.colors.primary.copy(alpha = 0.1f)
+        isBot -> MaterialTheme.colors.surface.copy(alpha = 0.2f)
+        else -> MaterialTheme.colors.background
+    }
+
+    val alignment = if (isUser) Alignment.End else Alignment.Start
+    val horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = horizontalArrangement
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .background(backgroundColor, shape = MaterialTheme.shapes.medium)
+                .padding(12.dp)
+                .widthIn(max = 300.dp)
+        ) {
+            Text(
+                text = message,
+                fontSize = 15.sp
+            )
+        }
     }
 }
