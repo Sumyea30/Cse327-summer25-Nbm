@@ -1,4 +1,7 @@
-package com.example.project_application
+class SimpleForwardProcessor<I, O> {
+    fun process(input: I): O {
+        // processing logic (pass-through or format)
 
-class SimpleForwardProcessor {
+        return input as O
+    }
 }

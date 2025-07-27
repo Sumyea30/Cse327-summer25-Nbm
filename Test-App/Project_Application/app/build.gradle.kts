@@ -5,6 +5,7 @@ plugins {
 
     id("com.google.gms.google-services")
     id("com.google.protobuf") version "0.9.5" apply false
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -93,4 +94,15 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    //implementation("com.google.api-client:google-api-client-android:1.35.0")
+    //implementation("com.google.oauth-client:google-oauth-client-jetty:1.35.0")
+    //implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
+    //implementation("com.google.http-client:google-http-client-gson:1.35.0")
+
+    implementation("com.google.android.gms:play-services-auth:21.0.0")
+
+    implementation("com.google.api-client:google-api-client-android:1.34.0")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+    implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
+    implementation("com.google.api-client:google-api-client-gson:1.34.0")
 }
