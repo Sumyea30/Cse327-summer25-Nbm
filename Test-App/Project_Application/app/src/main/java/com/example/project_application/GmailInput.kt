@@ -1,51 +1,52 @@
-package com.example.project_application.workflow.input
+package com.example.project_application
 
-import android.content.Context
-import android.util.Log
-import com.example.project_application.workflow.WorkflowData
-import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
-import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.gmail.Gmail
 import com.google.api.services.gmail.model.ListMessagesResponse
 import com.google.api.services.gmail.model.Message
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class GmailInput(
-    private val context: Context,
     private val credential: GoogleAccountCredential
 ) {
-    private val gmailService: Gmail by lazy {
-        Gmail.Builder(
-            AndroidHttp.newCompatibleTransport(),
+
+    suspend fun fetchLatestMessages(
+        userId: String = "me",
+        maxResults: Long = 5
+    ): List<String> {
+        val gmailService = Gmail.Builder(
+            NetHttpTransport(),
             GsonFactory.getDefaultInstance(),
             credential
-        ).setApplicationName("Project Application").build()
-    }
-    suspend fun fetchRecentEmails(limit: Int = 5): List<WorkflowData<String, Unit>> = withContext(Dispatchers.IO) {
-        try {
-            val user = "me"
-            val messagesResponse: ListMessagesResponse = gmailService.users().messages().list(user)
-                .setMaxResults(limit.toLong())
-                .setQ("is:unread")
-                .execute()
+        )
+            .setApplicationName("ProjectApplication")
+            .build()
 
-            val messages: List<Message> = messagesResponse.messages ?: emptyList()
+        val listResponse: ListMessagesResponse = gmailService.users().messages()
+            .list(userId)
+            .setQ("is:unread")
+            .setMaxResults(maxResults)
+            .execute()
 
-            messages.map { message ->
-                val fullMessage = gmailService.users().messages().get(user, message.id).setFormat("FULL").execute()
-                val body = fullMessage.snippet
-                WorkflowData(input = body, output = Unit)
+        val messages = listResponse.messages ?: return emptyList()
+
+        return messages.mapNotNull { msg ->
+            try {
+                val fullMessage: Message = gmailService.users().messages()
+                    .get(userId, msg.id)
+                    .setFormat("full")
+                    .execute()
+                fullMessage.snippet
+            } catch (e: Exception) {
+                null
             }
-        } catch (e: UserRecoverableAuthIOException) {
-            Log.e("GmailInput", "Authorization required", e)
-            // You should handle this by startingActivityForResult using e.intent
-            emptyList()
-        } catch (e: Exception) {
-            Log.e("GmailInput", "Error fetching emails", e)
-            emptyList()
         }
     }
+    fun fetchLatestMessagesBlocking(): List<String> {
+        return kotlinx.coroutines.runBlocking {
+            fetchLatestMessages()
+        }
+    }
+
 }

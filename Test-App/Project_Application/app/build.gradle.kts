@@ -52,6 +52,15 @@ android {
     androidResources {
         noCompress += listOf("task") // Prevent compression of LLM task files
     }
+
+    packaging {
+        resources {
+            excludes.add("META-INF/INDEX.LIST")
+            excludes.add("META-INF/DEPENDENCIES")
+            // pickFirst instead:
+            // pickFirsts.add("META-INF/DEPENDENCIES")
+        }
+    }
 }
 
 dependencies {
@@ -98,11 +107,19 @@ dependencies {
     //implementation("com.google.oauth-client:google-oauth-client-jetty:1.35.0")
     //implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
     //implementation("com.google.http-client:google-http-client-gson:1.35.0")
+    implementation("com.google.android.gms:play-services-auth:21.4.0") // Google sign-in
 
-    implementation("com.google.android.gms:play-services-auth:21.0.0")
+// Google Java client (Gmail API)
+    implementation("com.google.api-client:google-api-client-android:2.8.0")
+    implementation("com.google.oauth-client:google-oauth-client-jetty:1.36.0")
+    implementation("com.google.api-client:google-api-client-gson:2.8.0")
+    implementation("com.google.http-client:google-http-client:1.47.1")
 
-    implementation("com.google.api-client:google-api-client-android:1.34.0")
-    implementation("com.google.oauth-client:google-oauth-client-jetty:1.34.1")
+// Gmail API itself
     implementation("com.google.apis:google-api-services-gmail:v1-rev110-1.25.0")
-    implementation("com.google.api-client:google-api-client-gson:1.34.0")
+
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    implementation("com.sun.mail:jakarta.mail:2.0.1")
+
 }

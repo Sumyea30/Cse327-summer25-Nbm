@@ -1,7 +1,7 @@
-class SimpleForwardProcessor<I, O> {
-    fun process(input: I): O {
-        // processing logic (pass-through or format)
+package com.example.project_application
 
-        return input as O
+class SimpleForwardProcessor : WorkflowProcessor<String, String> {
+    override fun process(input: List<String>): List<String> {
+        return input.map { "Processed: $it" }
     }
 }

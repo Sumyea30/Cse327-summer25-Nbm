@@ -18,6 +18,7 @@ import com.google.firebase.FirebaseApp
 import java.io.File
 import android.content.Context.RECEIVER_NOT_EXPORTED
 import androidx.annotation.RequiresApi
+import com.example.project_application.Config
 
 class MainActivity : ComponentActivity() {
 
@@ -76,3 +77,5 @@ class MainActivity : ComponentActivity() {
         unregisterReceiver(onDownloadComplete)
     }
 }
+
+
