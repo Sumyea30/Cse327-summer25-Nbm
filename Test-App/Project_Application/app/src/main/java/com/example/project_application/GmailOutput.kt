@@ -1,50 +1,40 @@
 package com.example.project_application
 
-import android.util.Base64
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
-import com.google.api.client.http.javanet.NetHttpTransport
-import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.gmail.Gmail
 import com.google.api.services.gmail.model.Message
-import java.io.ByteArrayOutputStream
+import android.util.Base64
 import java.util.*
-import jakarta.mail.Session
-import jakarta.mail.internet.InternetAddress
-import jakarta.mail.internet.MimeMessage
-import jakarta.mail.Message.RecipientType
+import javax.mail.Session
+import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeMessage
 
 class GmailOutput(
-    credential: GoogleAccountCredential,
-    private val user: String // usually "me"
-) {
+    private val service: Gmail,
+    private val userEmail: String
+) : WorkflowOutput<String> {
 
-    private val gmailService: Gmail = Gmail.Builder(
-        NetHttpTransport(), // Replaced deprecated AndroidHttp
-        GsonFactory(),
-        credential
-    ).setApplicationName("ProjectApplication").build()
-
-    fun sendMessages(subject: String, recipient: String, messages: List<String>) {
-        messages.forEach { message ->
-            sendEmail(subject, recipient, message)
-        }
-    }
-
-    private fun sendEmail(subject: String, recipient: String, body: String) {
+    override fun sendMessages(subject: String, recipient: String, messages: List<String>) {
         val session = Session.getDefaultInstance(Properties(), null)
-        val mimeMessage = MimeMessage(session)
 
-        mimeMessage.setFrom(InternetAddress(user))
-        mimeMessage.addRecipient(RecipientType.TO, InternetAddress(recipient))
-        mimeMessage.subject = subject
-        mimeMessage.setText(body)
+        messages.forEach { msg ->
+            val email = MimeMessage(session).apply {
+                setFrom(InternetAddress(userEmail))
+                addRecipient(javax.mail.Message.RecipientType.TO, InternetAddress(recipient))
+                setSubject(subject)
+                setText(msg)
+            }
 
-        val buffer = ByteArrayOutputStream()
-        mimeMessage.writeTo(buffer)
-        val encodedEmail = Base64.encodeToString(buffer.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
+            val buffer = java.io.ByteArrayOutputStream().apply {
+                email.writeTo(this)
+            }
 
-        val message = Message().apply { raw = encodedEmail }
+            val raw = Base64.encodeToString(buffer.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
 
-        gmailService.users().messages().send(user, message).execute()
+            val message = Message().apply {
+                this.raw = raw
+            }
+
+            service.users().messages().send(userEmail, message).execute()
+        }
     }
 }

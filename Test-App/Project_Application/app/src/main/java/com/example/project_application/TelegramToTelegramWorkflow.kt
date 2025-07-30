@@ -1,6 +1,6 @@
 package com.example.project_application
 
-class GmailToTelegramWorkflow(
+class TelegramToTelegramWorkflow(
     input: WorkflowInput<String>,
     processor: WorkflowProcessor<String, String>,
     private val output: TelegramOutput

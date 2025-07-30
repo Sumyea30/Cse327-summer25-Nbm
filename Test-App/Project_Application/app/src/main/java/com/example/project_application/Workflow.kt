@@ -5,9 +5,10 @@ abstract class Workflow<I, O>(
     private val processor: WorkflowProcessor<I, O>,
     private val output: WorkflowOutput<O>
 ) {
-    fun run(subject: String, recipient: String) {
-        val inputs = input.fetchLatestMessages()
-        val processed = processor.process(inputs)
+    open fun run(subject: String = "", recipient: String = "") {
+        val data = input.fetch()
+        val processed = processor.process(data)
         output.sendMessages(subject, recipient, processed)
     }
 }
+

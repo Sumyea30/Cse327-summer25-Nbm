@@ -7,12 +7,12 @@ import org.json.JSONObject
 class TelegramInput(
     private val botToken: String,
     private var lastUpdateId: Long = 0L
-) {
+) : WorkflowInput<String> {
 
     private val client = OkHttpClient()
 
-    fun fetchLatestMessages(limit: Int = 5): List<String> {
-        val url = "https://api.telegram.org/bot$botToken/getUpdates?offset=${lastUpdateId + 1}&limit=$limit"
+    override fun fetch(): List<String> {
+        val url = "https://api.telegram.org/bot$botToken/getUpdates?offset=${lastUpdateId + 1}&limit=5"
         val request = Request.Builder().url(url).build()
 
         client.newCall(request).execute().use { response ->

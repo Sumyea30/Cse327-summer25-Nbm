@@ -1,36 +1,32 @@
 package com.example.project_application
 
-import okhttp3.FormBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 
-class TelegramOutput(private val botToken: String, private val chatId: String) {
+class TelegramOutput(
+    private val botToken: String,
+    private val chatId: String
+) : WorkflowOutput<String> {
 
     private val client = OkHttpClient()
 
-    fun sendMessages(messages: List<String>) {
-        messages.forEach { message ->
-            sendMessage(message)
-        }
-    }
-
-    private fun sendMessage(text: String) {
-        val url = "https://api.telegram.org/bot$botToken/sendMessage"
-
-        val body = FormBody.Builder()
-            .add("chat_id", chatId)
-            .add("text", text)
-            .build()
-
-        val request = Request.Builder()
-            .url(url)
-            .post(body)
-            .build()
-
-        client.newCall(request).execute().use {
-            if (!it.isSuccessful) {
-                println("Telegram send failed: ${it.code}")
+    override fun sendMessages(subject: String, recipient: String, messages: List<String>) {
+        for (msg in messages) {
+            val url = "https://api.telegram.org/bot$botToken/sendMessage"
+            val json = JSONObject().apply {
+                put("chat_id", chatId)
+                put("text", "[$subject] $msg")
             }
+
+            val request = Request.Builder()
+                .url(url)
+                .post(json.toString().toRequestBody("application/json".toMediaTypeOrNull()))
+                .build()
+
+            client.newCall(request).execute().close()
         }
     }
 }

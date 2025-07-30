@@ -55,10 +55,14 @@ android {
 
     packaging {
         resources {
-            excludes.add("META-INF/INDEX.LIST")
-            excludes.add("META-INF/DEPENDENCIES")
-            // pickFirst instead:
-            // pickFirsts.add("META-INF/DEPENDENCIES")
+            excludes += "META-INF/LICENSE.md"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE-notice.md"
+            excludes += "META-INF/NOTICE.txt"
+            excludes += "META-INF/NOTICE"
+            excludes += "META-INF/NOTICE.md"
+
         }
     }
 }
@@ -120,6 +124,19 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    implementation("com.sun.mail:jakarta.mail:2.0.1")
+    //implementation("com.sun.mail:jakarta.mail:2.0.1")
 
+    implementation("androidx.security:security-crypto:1.0.0")
+
+
+    implementation("com.sun.mail:android-mail:1.6.7") // Or the latest version
+   // implementation("com.sun.mail:android-activation:1.6.7") // Or the latest version
+
+    configurations.all {
+        resolutionStrategy {
+            force("com.google.api-client:google-api-client:1.35.2")
+            force("com.google.oauth-client:google-oauth-client:1.35.0")
+            force("com.google.http-client:google-http-client-android:1.40.1")
+        }
+    }
 }
