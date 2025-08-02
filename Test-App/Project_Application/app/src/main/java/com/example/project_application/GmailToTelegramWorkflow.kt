@@ -8,4 +8,9 @@ class GmailToTelegramWorkflow(
     override fun sendMessages(subject: String, recipient: String, messages: List<String>) {
         output.sendMessages(subject, recipient, messages)
     }
-})
+
+    }
+
+)
+
+
