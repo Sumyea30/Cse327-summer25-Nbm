@@ -2,7 +2,6 @@ package com.example.project_application
 
 import android.app.DownloadManager
 import android.content.*
-import android.net.Uri
 import android.os.*
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,22 +9,21 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.example.project_application.ui.theme.Project_ApplicationTheme
 import com.google.firebase.FirebaseApp
-import java.io.File
-import android.content.Context.RECEIVER_NOT_EXPORTED
 import androidx.annotation.RequiresApi
-import com.example.project_application.Config
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.services.gmail.GmailScopes
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.*
 import android.util.Log
-
+import com.example.project_application.config.Config
+import com.example.project_application.core.WorkflowManager
+import com.example.project_application.io.input.GmailInput
+import com.example.project_application.io.output.GmailOutput
+import com.example.project_application.io.input.TelegramInput
+import com.example.project_application.io.output.TelegramOutput
+import com.example.project_application.processor.PassThroughProcessor
 
 
 class MainActivity : ComponentActivity() {
@@ -81,25 +79,7 @@ class MainActivity : ComponentActivity() {
                     )
 
                     "home" -> {
-                        var workflowStarted by remember { mutableStateOf(false) }
-
                         HomeScreen()
-
-                        LaunchedEffect(Unit) {
-                            if (!workflowStarted) {
-                                workflowStarted = true
-                                Toast.makeText(this@MainActivity, "Workflow started", Toast.LENGTH_SHORT).show()
-
-                                try {
-                                    runWorkflow()
-                                    Toast.makeText(this@MainActivity, "Workflow completed", Toast.LENGTH_SHORT).show()
-                                } catch (e: Exception) {
-                                    Log.e("Workflow", "Error: ", e)
-                                    Toast.makeText(this@MainActivity, "Workflow crashed: ${e.message}", Toast.LENGTH_LONG).show()
-                                }
-                            }
-                        }
-
 
                     }
                 }
@@ -114,22 +94,6 @@ class MainActivity : ComponentActivity() {
                 Toast.makeText(this@MainActivity, "Model download completed!", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private suspend fun runWorkflow() = withContext(Dispatchers.IO) {
-        val gmailService = GmailServiceFactory.createGmailService(this@MainActivity, credential)
-        val gmailInput = GmailInput(gmailService)
-        val telegramInput = TelegramInput(Config.TELEGRAM_BOT_TOKEN)
-        val processor = SimpleForwardProcessor()
-
-        val gmailOutput = GmailOutput(gmailService, Config.GMAIL_USER_EMAIL)
-        val telegramOutput = TelegramOutput(Config.TELEGRAM_BOT_TOKEN, Config.TELEGRAM_CHAT_ID)
-
-        val gmailToTelegram = GmailToTelegramWorkflow(gmailInput, processor, telegramOutput)
-        val telegramToGmail = TelegramToGmailWorkflow(telegramInput, processor, gmailOutput)
-
-        val manager = WorkflowManager(listOf(gmailToTelegram, telegramToGmail))
-        manager.runAll("Freely", "ssadman552@gmail.com")
     }
 
     override fun onDestroy() {
