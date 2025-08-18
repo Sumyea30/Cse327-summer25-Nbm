@@ -16,18 +16,29 @@ class TelegramOutput(
 
     override fun sendMessages(subject: String, recipient: String, messages: List<String>) {
         for (msg in messages) {
-            val url = "https://api.telegram.org/bot$botToken/sendMessage"
-            val json = JSONObject().apply {
-                put("chat_id", chatId)
-                put("text", "[$subject] $msg")
+            try {
+                val url = "https://api.telegram.org/bot$botToken/sendMessage"
+                val json = JSONObject().apply {
+                    put("chat_id", chatId)
+                    put("text", "[$subject] $msg")
+                }
+
+                val request = Request.Builder()
+                    .url(url)
+                    .post(json.toString().toRequestBody("application/json".toMediaTypeOrNull()))
+                    .build()
+
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        println("Telegram send error: ${response.code}")
+                    } else {
+                        println("✅ Sent Telegram message: $msg")
+                    }
+                }
+
+            } catch (e: Exception) {
+                println("TelegramOutput Error: ${e.message}")
             }
-
-            val request = Request.Builder()
-                .url(url)
-                .post(json.toString().toRequestBody("application/json".toMediaTypeOrNull()))
-                .build()
-
-            client.newCall(request).execute().close()
         }
     }
 }

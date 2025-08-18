@@ -16,29 +16,41 @@ class TelegramInput(
         val url = "https://api.telegram.org/bot$botToken/getUpdates?offset=${lastUpdateId + 1}&limit=5"
         val request = Request.Builder().url(url).build()
 
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) return emptyList()
-
-            val body = response.body?.string() ?: return emptyList()
-            val json = JSONObject(body)
-
-            if (!json.getBoolean("ok")) return emptyList()
-
-            val messages = mutableListOf<String>()
-            val resultArray = json.getJSONArray("result")
-
-            for (i in 0 until resultArray.length()) {
-                val update = resultArray.getJSONObject(i)
-                lastUpdateId = update.getLong("update_id")
-
-                val message = update.optJSONObject("message") ?: continue
-                val text = message.optString("text", "")
-                if (text.isNotBlank()) {
-                    messages.add(text)
+        return try {
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    println("TelegramInput HTTP error: ${response.code}")
+                    return emptyList()
                 }
-            }
 
-            return messages
+                val body = response.body?.string() ?: return emptyList()
+                val json = JSONObject(body)
+
+                if (!json.getBoolean("ok")) return emptyList()
+
+                val messages = mutableListOf<String>()
+                val resultArray = json.getJSONArray("result")
+
+                for (i in 0 until resultArray.length()) {
+                    val update = resultArray.getJSONObject(i)
+                    lastUpdateId = update.getLong("update_id")
+
+                    val message = update.optJSONObject("message") ?: continue
+                    val chat = message.optJSONObject("chat")
+                    val chatId = chat?.optLong("id")
+                    val text = message.optString("text", "")
+
+                    if (text.isNotBlank()) {
+                        println("📥 Telegram message from $chatId: $text")
+                        messages.add(text)
+                    }
+                }
+
+                messages
+            }
+        } catch (e: Exception) {
+            println("TelegramInput Error: ${e.message}")
+            emptyList()
         }
     }
 }

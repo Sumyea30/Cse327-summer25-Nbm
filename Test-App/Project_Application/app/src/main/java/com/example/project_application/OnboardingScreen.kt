@@ -20,24 +20,9 @@ import kotlinx.coroutines.launch
 fun OnboardingScreen(onFinish: () -> Unit) {
     val pages = listOf(
         OnboardingPage(
-            title = "Welcome to Freely",
+            title = "Welcome to Freely-Maid",
             description = "A great friend to chat with you.",
             imageRes = R.drawable.chat1
-        ),
-        OnboardingPage(
-            title = "Feeling Confused?",
-            description = "Just open Freely — your thoughts, cleared.",
-            imageRes = R.drawable.chat2
-        ),
-        OnboardingPage(
-            title = "Cheer Up, Buddy!",
-            description = "Freely is always ready to listen and help.",
-            imageRes = R.drawable.chat3
-        ),
-        OnboardingPage(
-            title = "Let's Get Started!",
-            description = "You're all set!",
-            imageRes = R.drawable.chat4
         )
     )
 

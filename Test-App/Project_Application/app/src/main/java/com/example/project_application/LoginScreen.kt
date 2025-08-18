@@ -41,8 +41,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     var dob by remember { mutableStateOf("") }
     var country by remember { mutableStateOf("") }
 
-
-
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -71,7 +69,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
     }
 
-    // 🔄 Request location once on load
     LaunchedEffect(Unit) {
         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
@@ -79,24 +76,64 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Logo at the top
         Image(
             painter = painterResource(id = R.drawable.logo2),
             contentDescription = "App Logo",
-            modifier = Modifier
-                .size(120.dp)
-                .align(Alignment.CenterHorizontally)
+            modifier = Modifier.size(120.dp)
         )
-        Spacer(modifier = Modifier.height(16.dp))
 
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Welcome text
         Text(
-            text = if (isSignUp) "Create Account" else "Welcome Back",
-            style = MaterialTheme.typography.headlineSmall
+            text = if (isSignUp) "Sign Up" else "Welcome!",
+            style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Google Sign-In button (moved to top)
+        GoogleSignInButton(
+            onLoginSuccess = onLoginSuccess,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // "Highly Recommended" text under Google button
+        Text(
+            text = "Highly Recommended",
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Divider with "OR" text
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Divider(
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+            Text(
+                text = "OR",
+                modifier = Modifier.padding(horizontal = 8.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Divider(
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (isSignUp) {
             OutlinedTextField(
@@ -105,15 +142,15 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 label = { Text("Full Name") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = dob,
                 onValueChange = { dob = it },
-                label = { Text("Date of Birth (DD/MM/YYYY)") },
+                label = { Text("Date Of Birth") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         OutlinedTextField(
@@ -122,7 +159,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = password,
@@ -131,7 +168,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (isSignUp) {
             OutlinedTextField(
@@ -141,7 +178,7 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                 label = { Text("Country (auto-filled)") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
 
         Button(
@@ -172,7 +209,6 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                                 Toast.makeText(context, "Sign up failed", Toast.LENGTH_SHORT).show()
                             }
                         }
-
                 } else {
                     auth.signInWithEmailAndPassword(email, password)
                         .addOnCompleteListener {
@@ -185,37 +221,41 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
                         }
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
         ) {
-            Text(if (isSignUp) "Sign Up" else "Sign In")
+            Text(if (isSignUp) "Sign Up" else "Login")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (!isSignUp) {
+            TextButton(
+                onClick = {
+                    if (email.isNotBlank()) {
+                        auth.sendPasswordResetEmail(email)
+                            .addOnCompleteListener {
+                                Toast.makeText(context, "Reset link sent to $email", Toast.LENGTH_SHORT).show()
+                            }
+                    } else {
+                        Toast.makeText(context, "Enter your email first", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Forgot Password?")
+            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(onClick = {
-            if (email.isNotBlank()) {
-                auth.sendPasswordResetEmail(email)
-                    .addOnCompleteListener {
-                        Toast.makeText(context, "Reset link sent to $email", Toast.LENGTH_SHORT).show()
-                    }
-            } else {
-                Toast.makeText(context, "Enter your email first", Toast.LENGTH_SHORT).show()
-            }
-        }) {
-            Text("Forgot Password?")
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
             onClick = { isSignUp = !isSignUp },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isSignUp) "Already have an account? Sign In" else "Don't have an account? Sign Up")
+            Text(if (isSignUp) "Already Have an Account? Sign In" else "Don't have an account? Sign Up")
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        GoogleSignInButton(onLoginSuccess)
     }
 }
+

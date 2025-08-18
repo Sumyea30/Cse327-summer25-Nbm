@@ -5,9 +5,9 @@ import com.example.project_application.core.WorkflowOutput
 import com.example.project_application.core.WorkflowProcessor
 
 abstract class Workflow<I, O>(
-    private val input: WorkflowInput<I>,
-    private val processor: WorkflowProcessor<I, O>,
-    private val output: WorkflowOutput<O>
+    protected val input: WorkflowInput<I>,
+    protected val processor: WorkflowProcessor<I, O>,
+    protected val output: WorkflowOutput<O>
 ) {
     open fun run(subject: String = "", recipient: String = "") {
         val data = input.fetch()

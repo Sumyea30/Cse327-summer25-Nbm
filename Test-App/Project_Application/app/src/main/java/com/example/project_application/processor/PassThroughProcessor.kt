@@ -4,6 +4,7 @@ import com.example.project_application.core.WorkflowProcessor
 
 class PassThroughProcessor : WorkflowProcessor<String, String> {
     override fun process(data: List<String>): List<String> {
+        data.forEach { println("Passing through: $it") }
         return data // just forward
     }
 }
