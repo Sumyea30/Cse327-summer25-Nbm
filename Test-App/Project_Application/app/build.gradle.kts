@@ -6,6 +6,8 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.protobuf") version "0.9.5" apply false
     id("org.jetbrains.kotlin.kapt")
+
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.10" apply false
 }
 
 android {
@@ -178,4 +180,28 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.37.3")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+
+
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+    implementation("io.objectbox:objectbox-android:4.3.1")
+    implementation("com.google.accompanist:accompanist-permissions:0.37.3")
+    implementation("com.google.api-client:google-api-client-android:2.8.1")
+    implementation("com.google.apis:google-api-services-gmail:v1-rev20220815-2.0.0")
+    implementation("com.squareup.okhttp3:okhttp:5.1.0")
+
+    //implementation("com.evildox.utilizerx:artifact-name:")
+
+    implementation("com.google.mlkit:face-detection:16.1.7")
+    //implementation("com.google.mlkit:face-mesh-detection:16.1.7")
+    //implementation("com.google.mlkit:face-tracking:16.1.7")
+
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-gpu-api:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+
+    implementation("androidx.work:work-runtime-ktx:2.10.3")
+
+    implementation("com.google.api-client:google-api-client-android:2.8.1")
+
+    implementation("androidx.activity:activity-compose:1.10.1")
 }

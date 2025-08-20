@@ -32,9 +32,12 @@ import androidx.work.WorkManager
 import com.example.project_application.core.WorkflowModel
 import com.example.project_application.geofencing.GeofenceManager
 import com.example.project_application.geofencing.GeofenceScreen
+import com.example.project_application.image_workflow.ImageProcessor
 import com.example.project_application.image_workflow.ImageScanWorker
+import com.example.project_application.image_workflow.ImageWorkflowScreen
 import com.example.project_application.image_workflow.SettingsScreen
 import com.example.project_application.image_workflow.WifiReceiver
+import com.example.project_application.image_workflow.WorkflowHistory
 import com.example.project_application.instant_check.CameraScreen
 import com.example.project_application.ui.theme.Project_ApplicationTheme
 import com.example.project_application.ui.workflow.CreateWorkflowScreen
@@ -43,6 +46,9 @@ import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccoun
 import com.google.api.services.gmail.GmailScopes
 import com.google.firebase.FirebaseApp
 import java.util.concurrent.TimeUnit
+import androidx.core.app.NotificationCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 
 object CredentialHolder {
     var credential: GoogleAccountCredential? = null
@@ -50,12 +56,48 @@ object CredentialHolder {
 
 class MainActivity : ComponentActivity() {
 
-    private val modelUrl = "https://drive.google.com/uc?export=download&id=1ii8hB1PfdR5rFZF7wnWpG_tl8Jhtm_da"
+    private val modelUrl = "https://drive.google.com/uc?export=download&id=1ii8hB1PfdR1rFZF7wnWpG_tl8Jhtm_da"
     private val modelFileName = "gemma3-1b.task"
     private var downloadId: Long = 0L
 
     private lateinit var geofenceManager: GeofenceManager
     private lateinit var wifiReceiver: WifiReceiver
+
+    companion object {
+        lateinit var workManager: WorkManager
+        lateinit var credential: GoogleAccountCredential
+
+        fun enqueueImageScanWorker(context: Context) {
+            val prefs = context.getSharedPreferences("workflow_prefs", Context.MODE_PRIVATE)
+            val intervalMinutes = prefs.getInt("interval_minutes", 60).toLong()
+            val credential = credential
+
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+
+            val request = PeriodicWorkRequestBuilder<ImageScanWorker>(intervalMinutes, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build()
+
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                "image_scan",
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request
+            )
+        }
+
+        fun showNotification(context: Context, title: String, message: String) {
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notification = NotificationCompat.Builder(context, "workflow_channel")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
+            notificationManager.notify(1, notification)
+        }
+    }
 
     private val onDownloadComplete: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -79,7 +121,12 @@ class MainActivity : ComponentActivity() {
         geofenceManager = GeofenceManager(this)
         wifiReceiver = WifiReceiver()
 
-        // Create notification channel
+        workManager = WorkManager.getInstance(this)
+        credential = GoogleAccountCredential.usingOAuth2(this, listOf(GmailScopes.GMAIL_SEND, GmailScopes.GMAIL_READONLY)).apply {
+            selectedAccount = GoogleSignIn.getLastSignedInAccount(this@MainActivity)?.account
+        }
+        CredentialHolder.credential = credential
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "workflow_channel",
@@ -92,7 +139,6 @@ class MainActivity : ComponentActivity() {
             notificationManager.createNotificationChannel(channel)
         }
 
-        // Register receivers
         registerReceiver(onDownloadComplete, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), RECEIVER_NOT_EXPORTED)
         registerReceiver(wifiReceiver, IntentFilter(WifiManager.NETWORK_STATE_CHANGED_ACTION), RECEIVER_NOT_EXPORTED)
 
@@ -150,19 +196,12 @@ class MainActivity : ComponentActivity() {
                             onTalkWithFreely = { navController.navigate("llmchat") }
                         )
                     }
-                    composable("createTasks") {
-                        CreateTasksScreen(navController = navController)
-                    }
-                    composable("settings") {
-                        SettingsScreen(navController = navController, credential = credential)
-                    }
-                    composable("geofence") {
-                        GeofenceScreen(geofenceManager)
-                    }
-
+                    composable("createTasks") { CreateTasksScreen(navController = navController) }
+                    composable("settings") { SettingsScreen(navController = navController, credential = MainActivity.credential) }
+                    composable("geofence") { GeofenceScreen(geofenceManager) }
                     composable("createWorkflow") {
-                        if (credential != null) {
-                            CreateWorkflowScreen(navController = navController, credential = credential!!)
+                        if (MainActivity.credential != null) {
+                            CreateWorkflowScreen(navController = navController, credential = MainActivity.credential)
                         } else {
                             LaunchedEffect(Unit) {
                                 Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
@@ -170,10 +209,14 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
                     composable("imageWorkflow") {
-                        if (credential != null) {
-                            SettingsScreen(navController = navController, credential = credential!!)
+                        if (MainActivity.credential != null) {
+                            ImageWorkflowScreen(
+                                navController = navController,
+                                context = context,
+                                imageProcessor = ImageProcessor(context, MainActivity.credential),
+                                workflowHistory = WorkflowHistory(context)
+                            )
                         } else {
                             LaunchedEffect(Unit) {
                                 Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
@@ -181,7 +224,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
                     composable("workflowHistory") {
                         WorkflowHistoryScreen(
                             navController = navController,
@@ -189,17 +231,10 @@ class MainActivity : ComponentActivity() {
                             onClearHistory = { workflows.clear() }
                         )
                     }
-
-                    composable("llmchat") {
-                        LlmChatScreen(onBackToHome = { navController.popBackStack() })
-                    }
-
+                    composable("llmchat") { LlmChatScreen(onBackToHome = { navController.popBackStack() }) }
                     composable("camera") {
-                        if (credential != null) {
-                            CameraScreen(
-                                navController = navController,
-                                credential = credential!!
-                            )
+                        if (MainActivity.credential != null) {
+                            CameraScreen(navController = navController, credential = MainActivity.credential)
                         } else {
                             LaunchedEffect(Unit) {
                                 Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
@@ -211,8 +246,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Enqueue WorkManager for image scanning
-        enqueueImageScanWorker(this)
+        lifecycleScope.launch { MainActivity.enqueueImageScanWorker(this@MainActivity) }
     }
 
     override fun onDestroy() {
@@ -220,26 +254,5 @@ class MainActivity : ComponentActivity() {
         unregisterReceiver(onDownloadComplete)
         unregisterReceiver(wifiReceiver)
         CredentialHolder.credential = null
-    }
-
-    companion object {
-        fun enqueueImageScanWorker(context: Context) {
-            val prefs = context.getSharedPreferences("workflow_prefs", Context.MODE_PRIVATE)
-            val intervalMinutes = prefs.getInt("interval_minutes", 60).toLong()
-
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-
-            val request = PeriodicWorkRequestBuilder<ImageScanWorker>(intervalMinutes, TimeUnit.MINUTES)
-                .setConstraints(constraints)
-                .build()
-
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                "image_scan",
-                ExistingPeriodicWorkPolicy.UPDATE,
-                request
-            )
-        }
     }
 }

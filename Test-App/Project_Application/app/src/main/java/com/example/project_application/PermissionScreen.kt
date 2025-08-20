@@ -23,22 +23,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 
 @Composable
 fun PermissionScreen(onPermissionsGranted: () -> Unit) {
     val context = LocalContext.current
     val permissions = remember {
         buildList {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                addAll(
-                    listOf(
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.POST_NOTIFICATIONS,
-                        Manifest.permission.READ_MEDIA_IMAGES,
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.RECORD_AUDIO
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+ (SDK 29+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    addAll(
+                        listOf(
+                            Manifest.permission.CAMERA,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                            Manifest.permission.READ_MEDIA_IMAGES,
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION, // For background geofencing
+                            Manifest.permission.RECORD_AUDIO
+                        )
                     )
-                )
+                }
             } else {
                 addAll(
                     listOf(
@@ -71,12 +75,14 @@ fun PermissionScreen(onPermissionsGranted: () -> Unit) {
         }
     }
 
-    // Check permissions on launch and proceed if all are granted
+    // Check permissions on launch and request if needed
     LaunchedEffect(Unit) {
         val allPermissionsGranted = permissions.all { permission ->
             context.checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED
         }
-        if (allPermissionsGranted) {
+        if (!allPermissionsGranted) {
+            multiplePermissionLauncher.launch(permissions)
+        } else {
             onPermissionsGranted()
         }
     }

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,9 +52,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
-import com.example.project_application.image_workflow.sendEmail
+import com.example.project_application.image_workflow.GmailSender.sendEmail
 import com.example.project_application.sendTelegram
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.mlkit.vision.common.InputImage
@@ -201,48 +203,45 @@ private fun ShareDialog(
     onDismiss: () -> Unit,
     context: Context
 ) {
-    val prefs = context.getSharedPreferences("workflow_prefs", Context.MODE_PRIVATE)
-    val sonEmail = prefs.getString("son_email", "") ?: ""
-    val doctorEmail = prefs.getString("doctor_email", "") ?: ""
-    val telegramChatId = prefs.getString("telegram_chat_id", "") ?: ""
+    var recipient by remember { mutableStateOf("") }
+    var receiverType by remember { mutableStateOf("Gmail") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Share Detected Text") },
-        text = { Text("Choose where to send the scanned text:") },
+        title = { Text("Send to") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = recipient,
+                    onValueChange = { recipient = it },
+                    label = { Text("Enter recipient (email or Telegram ID)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = receiverType,
+                    onValueChange = { receiverType = it },
+                    label = { Text("Receiver Type") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
         confirmButton = {
-            if (sonEmail.isNotEmpty()) {
-                TextButton(onClick = {
-                    kotlinx.coroutines.runBlocking {
-                        sendEmail(context, credential, sonEmail, "Scanned Text", text)
-                        sendNotification(context, "Text shared to Grandpa ($sonEmail)")
+            TextButton(onClick = {
+                kotlinx.coroutines.runBlocking {
+                    when (receiverType) {
+                        "Gmail" -> if (recipient.isNotEmpty()) {
+                            sendEmail(context, credential, recipient, "Scanned Text", text, arrayOf())
+                            sendNotification(context, "Text shared to $recipient")
+                        }
+                        "Telegram" -> if (recipient.isNotEmpty()) {
+                            sendTelegram(context, text, recipient.toUri())
+                            sendNotification(context, "Text shared to Telegram ($recipient)")
+                        }
                     }
-                    onDismiss()
-                }) {
-                    Text("Send to Grandpa ($sonEmail)")
                 }
-            }
-            if (doctorEmail.isNotEmpty()) {
-                TextButton(onClick = {
-                    kotlinx.coroutines.runBlocking {
-                        sendEmail(context, credential, doctorEmail, "Scanned Text", text)
-                        sendNotification(context, "Text shared to Doctor ($doctorEmail)")
-                    }
-                    onDismiss()
-                }) {
-                    Text("Send to Doctor ($doctorEmail)")
-                }
-            }
-            if (telegramChatId.isNotEmpty()) {
-                TextButton(onClick = {
-                    kotlinx.coroutines.runBlocking {
-                        sendTelegram(context, text, null)
-                        sendNotification(context, "Text shared to Telegram")
-                    }
-                    onDismiss()
-                }) {
-                    Text("Send to Telegram")
-                }
+                onDismiss()
+            }) {
+                Text("Send")
             }
         },
         dismissButton = {

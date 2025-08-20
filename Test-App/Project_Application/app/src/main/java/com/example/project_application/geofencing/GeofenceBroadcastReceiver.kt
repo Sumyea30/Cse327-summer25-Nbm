@@ -13,7 +13,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.project_application.CredentialHolder
-import com.example.project_application.image_workflow.sendEmail
+import com.example.project_application.image_workflow.GmailSender.sendEmail
 import com.example.project_application.sendTelegram
 import com.google.android.gms.location.GeofencingEvent
 import kotlinx.coroutines.runBlocking
@@ -83,7 +83,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
                 when (geofenceData.receiverType) {
                     "Gmail" -> {
                         CredentialHolder.credential?.let { credential ->
-                            sendEmail(context, credential, geofenceData.receiver, "Geofence $transitionString: ${geofenceData.name}", geofenceData.message)
+                            sendEmail(context, credential, geofenceData.receiver, "Geofence $transitionString: ${geofenceData.name}", geofenceData.message, arrayOf()) // Added empty array for attachmentUris
                         }
                     }
                     "Telegram" -> {
